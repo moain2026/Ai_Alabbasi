@@ -22,6 +22,18 @@ try:
 except Exception:
     Knowledge = None
 
+# ── وحدات أنماط Manus (Phase 1) — اختيارية، لا تكسر السلوك القديم ──
+sys.path.insert(0, str(ROOT / "agent"))
+try:
+    from event_stream import EventStream, EventType   # noqa
+    from planner import Planner                        # noqa
+    from todo_manager import TodoManager               # noqa
+    from state_machine import StateMachine, State      # noqa
+    from interrupt_handler import InterruptHandler     # noqa
+    _MANUS_OK = True
+except Exception:
+    _MANUS_OK = False
+
 LOG_DIR = ROOT / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
@@ -75,7 +87,9 @@ def extract_json(text: str):
 
 
 class Agent:
-    def __init__(self, max_steps: int = 25, verbose: bool = True, topic: str = None, learn: bool = True, on_event=None):
+    def __init__(self, max_steps: int = 25, verbose: bool = True, topic: str = None,
+                 learn: bool = True, on_event=None, plan: bool = True,
+                 interrupt_handler=None):
         self.brain = Brain()
         self.max_steps = max_steps
         self.verbose = verbose
@@ -84,6 +98,14 @@ class Agent:
         self.kb = Knowledge() if Knowledge else None
         self.on_event = on_event      # callback(kind, data) للبث المباشر (الواجهة)
         self.log_path = LOG_DIR / f"run_{datetime.now():%Y%m%d_%H%M%S}.log"
+
+        # ── أنماط Manus (Phase 1) ──
+        self.use_plan = plan and _MANUS_OK
+        self.events = EventStream() if _MANUS_OK else None
+        self.sm = StateMachine() if _MANUS_OK else None
+        self.interrupt = interrupt_handler   # InterruptHandler اختياري من الخادم
+        self._planner = Planner(self.brain) if _MANUS_OK else None
+        self._todo = None             # يُنشأ عند بدء المهمة
 
     def _emit(self, kind: str, data):
         """يبث حدثاً للمستمع (الواجهة) إن وُجد."""
@@ -117,6 +139,24 @@ class Agent:
         if kb_context:
             user_msg += f"\n\n--- معرفة مساعدة (استفد منها) ---\n{kb_context}"
 
+        # 📋 التخطيط المسبق + قائمة المهام (نمط Manus Planner + Recitation)
+        plan_steps = []
+        if self.use_plan:
+            try:
+                self.sm.to(State.RUNNING)
+            except Exception:
+                pass
+            self.events and self.events.message("user", task)
+            plan_steps = self._planner.make_plan(task)
+            if plan_steps:
+                self._todo = TodoManager(title=task[:60], slug=None)
+                self._todo.set_items(plan_steps)
+                self.events and self.events.plan("planner", plan_steps)
+                self._emit("plan", plan_steps)
+                self._log("📋 الخطة:\n" + "\n".join(f"  {i+1}. {s}" for i, s in enumerate(plan_steps)))
+                user_msg += "\n\n--- خطة مقترحة (نفّذها بالترتيب) ---\n" + \
+                    "\n".join(f"{i+1}. {s}" for i, s in enumerate(plan_steps))
+
         messages = [
             {"role": "system", "content": system},
             {"role": "user", "content": user_msg},
@@ -126,6 +166,28 @@ class Agent:
         for step in range(1, self.max_steps + 1):
             self._log(f"\n──── الخطوة {step}/{self.max_steps} ────")
             self._emit("step", {"n": step, "total": self.max_steps})
+
+            # ⏸️ فحص المقاطعة (نمط Manus Interrupt)
+            if self.interrupt and self.interrupt.requested():
+                guidance = self.interrupt.consume()
+                if guidance:
+                    self._log(f"⏸️ مقاطعة بتوجيه جديد: {guidance}")
+                    self._emit("thought", f"(مقاطعة — إعادة توجيه: {guidance})")
+                    self.events and self.events.message("user", guidance, step)
+                    messages.append({"role": "user", "content": f"توجيه جديد من المستخدم (أعد التخطيط وفقه): {guidance}"})
+                    if self.sm and self.sm.can(State.INTERRUPTED):
+                        self.sm.to(State.INTERRUPTED); self.sm.to(State.RESUMING); self.sm.to(State.RUNNING)
+                else:
+                    self._log("⏸️ أُوقف بطلب المستخدم.")
+                    self._emit("stopped", "🛑 أُوقفت المهمة بطلبك.")
+                    if self.sm and self.sm.can(State.INTERRUPTED):
+                        self.sm.to(State.INTERRUPTED)
+                    return "🛑 أُوقفت المهمة بطلبك."
+
+            # 🔁 التلاوة (Recitation): أعِد قائمة المهام لآخر السياق كل بضع خطوات
+            if self._todo and step > 1:
+                messages.append({"role": "user", "content": self._todo.recite()})
+
             try:
                 reply = self.brain.think(messages)
             except Exception as e:
@@ -170,11 +232,19 @@ class Agent:
             if action.get("thought"):
                 self._log(f"💭 {action['thought']}")
                 self._emit("thought", action["thought"])
+                self.events and self.events.other("thought", action["thought"], step)
 
             if action.get("done"):
                 final = action.get("final", "تم.")
                 self._log(f"\n✅ انتهى:\n{final}")
                 self._emit("done", final)
+                # علّم كل المهام المتبقية كمكتملة + حدّث الحالة
+                if self._todo:
+                    for txt, d in list(self._todo._items):
+                        if not d:
+                            self._todo.complete(txt)
+                if self.sm and self.sm.can(State.DONE):
+                    self.sm.to(State.DONE)
                 # 🔁 حلقة التعلّم: احفظ التجربة الناجحة كـ skill
                 if self.learn and self.kb:
                     self._save_skill(task, action.get("thought", ""), final)
@@ -188,12 +258,16 @@ class Agent:
 
             self._log(f"🛠️ {tool}({json.dumps(args, ensure_ascii=False)[:200]})")
             self._emit("tool", {"name": tool, "args": args})
+            self.events and self.events.action(tool, args, step)
             result = T.call_tool(tool, args)
             self._log(f"📤 النتيجة:\n{result[:1000]}")
             self._emit("tool_result", {"name": tool, "result": result[:2000]})
+            self.events and self.events.observation(tool, result[:500], step)
             messages.append({"role": "user", "content": f"نتيجة {tool}:\n{result[:4000]}"})
 
         self._log("\n⏹️ بلغ الحد الأقصى للخطوات.")
+        if self.sm and self.sm.can(State.FAILED):
+            self.sm.to(State.FAILED)
         return "بلغ الوكيل الحد الأقصى للخطوات دون إنهاء المهمة."
 
     def _save_skill(self, task: str, thought: str, final: str):
