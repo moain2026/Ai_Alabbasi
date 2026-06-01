@@ -1,0 +1,379 @@
+ 
+
+ التقرير التقني الشامل عن Manus AI: دليل ترقية وكيل Hermes الذكي 
+
+ التقرير التقني الشامل عن Manus AI: دليل ترقية وكيل Hermes الذكي 
+
+ 2026-06-01 
+ Arabic 
+
+ تم إنشاؤه بأفكار ورؤى من 14 مصادر 
+ الآن سأقدم لك التقرير المُعد خصيصاً ليُرسل لوكيل البيئة عالية الأداء على Genspark: 
+
+ 📋 التقرير التقني الشامل عن Manus AI 
+ (مُعدّ خصيصاً للإرسال إلى وكيل Genspark عالي الأداء لترقية مستودع hermes-agent-smart ) 
+
+ تعليمات للوكيل المستقبِل: هذا تقرير بحثي تقني عميق عن وكيل Manus AI. هدفك هو استخراج كل نمط معماري فيه و تطبيقه على مستودعي moain2026/hermes-agent-smart . التقرير يحتوي على ملفات النظام المسربة الكاملة، وقائمة الأدوات الـ29، وتفاصيل المعمارية متعددة الطبقات، وآليات المقاطعة وإعادة التخطيط. 
+
+ 🎯 الجزء 1: ما يجعل Manus AI استثنائياً 
+ Manus AI هو وكيل ذكاء اصطناعي مستقل طوّرته شركة Monica الصينية، يعتمد على نماذج أساسية: Claude 3.5/3.7 Sonnet + Qwen المضبوط بدقة (fine-tuned) Renschni Investigation 1 . ما يميّزه عن باقي الوكلاء (بما فيها Hermes) سبعة أمور أساسية: 
+
+ # 
+ الميزة 
+ لماذا فريدة؟ 
+
+ 1 
+ CodeAct بدلاً من Tool Calling 
+ يكتب Python قابل للتنفيذ بدل استدعاءات دوال محدودة 
+
+ 2 
+ بنية ثلاثية الطبقات 
+ Planner → Executor → Verifier منفصلة 
+
+ 3 
+ Event Stream كذاكرة عمل 
+ سجل زمني لكل شيء يحدث في الجلسة 
+
+ 4 
+ todo.md المتجدّد (Recitation) 
+ يُعيد كتابة الخطة كل دورة لإبقاء التركيز 
+
+ 5 
+ Wide Research 
+ يُطلق 100+ وكيل فرعي بالتوازي 
+
+ 6 
+ Browser Operator 
+ يتحكّم في متصفح المستخدم المحلي عبر MCP 
+
+ 7 
+ مقاطعة سلسة وإعادة تخطيط ديناميكي 
+ المستخدم يقاطع → الوكيل يُعيد بناء todo.md 
+
+ 🧬 الجزء 2: نظام Manus التشغيلي الكامل (مسرّب 100%) 
+ تم تسريب 4 ملفات أساسية من Manus على مستودع x1xhlol/system-prompts-and-models-of-ai-tools 2 . إليك المحتوى الفعلي الذي يجب على الوكيل دراسته بعمق: 
+ 2.1) Agent loop.txt — حلقة العمل الرئيسية 
+ You are Manus, an AI agent created by the Manus team.
+
+You excel at the following tasks:
+1. Information gathering, fact-checking, and documentation
+2. Data processing, analysis, and visualization
+3. Writing multi-chapter articles and in-depth research reports
+4. Creating websites, applications, and tools
+5. Using programming to solve various problems beyond development
+6. Various tasks that can be accomplished using computers and the internet
+
+You operate in an agent loop, iteratively completing tasks through these steps:
+1. Analyze Events: Understand user needs and current state through event stream
+2. Select Tools: Choose next tool call based on current state, task planning, knowledge
+3. Wait for Execution: Tool action executed by sandbox environment, observation added
+4. Iterate: Choose ONLY ONE tool call per iteration, repeat until task completion
+5. Submit Results: Send results via message tools with attachments
+6. Enter Standby: Enter idle state when all tasks completed
+
+ القاعدة الذهبية: " One tool call per iteration " — هذا أهم قرار معماري في Manus. 
+ 2.2) Modules.txt — التعليمات التفصيلية (12 KB) 
+ أهم الأقسام التي يجب نسخها/تكييفها في Hermes: 
+ قسم <event_stream> 
+ Event types in the chronological stream:
+1. Message: Messages input by actual users
+2. Action: Tool use (function calling) actions
+3. Observation: Results from action execution
+4. Plan: Task step planning from Planner module
+5. Knowledge: Best practices from Knowledge module
+6. Datasource: Data API documentation
+7. Other miscellaneous events
+
+ قسم <planner_module> — قلب المقاطعة وإعادة التخطيط 
+ - System is equipped with planner module for overall task planning
+- Task plans use numbered pseudocode to represent execution steps
+- Each planning update includes the current step number, status, and reflection
+- Pseudocode representing execution steps WILL UPDATE when overall task objective changes
+- Must complete all planned steps and reach the final step number by completion
+
+ 🔥 هذه هي السرّ الذي ذكره المستخدم : «أستطيع مقاطعته وهو يغيّر مساره».
+الآلية: عندما يُرسل المستخدم رسالة جديدة، يلتقطها event stream ، يقرأها Planner module ، فيُعيد بناء قائمة الـ pseudocode، ثم يُعيد كتابة todo.md من الصفر. يقول التحقيق الفني: «يمكن تحديث الخطة فوراً إذا تغيّرت المهمة. قواعد Manus تقول إنه يُعيد بناء قائمة المهام إذا تغيّرت الخطة جوهرياً» Renschni 1 . 
+
+ قسم <todo_rules> — آلية Recitation 
+ - Create todo.md file as checklist based on task planning from the Planner module
+- Task planning takes precedence over todo.md, while todo.md contains more details
+- Update markers in todo.md via text replacement tool IMMEDIATELY after completing each item
+- Rebuild todo.md when task planning changes significantly
+- Must use todo.md to record and update progress for information gathering tasks
+- When all planned steps complete, verify todo.md completion and remove skipped items
+
+ 📖 شرح الـ Recitation: فريق Manus يقول: «بإعادة كتابة قائمة todo باستمرار، يقوم Manus بـ"تلاوة" أهدافه في نهاية السياق. هذا يدفع الخطة العامة إلى نطاق انتباه النموذج الحديث (recent attention span) ، ويتجنب الضياع في المنتصف، ويقلل من انحراف الأهداف» Manus Context Engineering 3 . 
+
+ قسم <message_rules> — رسالتان فقط: notify و ask 
+ - Message tools are divided into:
+ • notify (NON-BLOCKING, no reply needed from users)
+ • ask (BLOCKING, reply required)
+- Actively use notify for progress updates
+- Reserve ask for ONLY essential needs (minimize disruption)
+- First reply must be brief, only confirming receipt without specific solutions
+- Provide all relevant files as attachments
+
+ قسم <sandbox_environment> — البيئة الفعلية 
+ System Environment:
+- Ubuntu 22.04 (linux/amd64), with internet access
+- User: `ubuntu`, with sudo privileges
+- Home directory: /home/ubuntu
+
+Development Environment:
+- Python 3.10.12 (commands: python3, pip3)
+- Node.js 20.18.0 (commands: node, npm)
+- Basic calculator (command: bc)
+
+Sleep Settings:
+- Sandbox environment immediately available at task start
+- Inactive sandbox environments automatically sleep and wake up
+
+ 2.3) tools.json — قائمة الأدوات الـ 29 الكاملة 
+
+ # 
+ الأداة 
+ الفئة 
+ الوظيفة 
+
+ 1 
+ message_notify_user 
+ Communication 
+ إرسال رسالة دون انتظار رد 
+
+ 2 
+ message_ask_user 
+ Communication 
+ سؤال المستخدم وانتظار الرد 
+
+ 3 
+ file_read 
+ Files 
+ قراءة ملف (مع start_line , end_line , sudo ) 
+
+ 4 
+ file_write 
+ Files 
+ كتابة/إلحاق لملف 
+
+ 5 
+ file_str_replace 
+ Files 
+ استبدال نص في ملف 
+
+ 6 
+ file_find_in_content 
+ Files 
+ بحث Regex داخل ملف 
+
+ 7 
+ file_find_by_name 
+ Files 
+ بحث بالاسم في مجلد 
+
+ 8 
+ shell_exec 
+ Shell 
+ تنفيذ أمر في جلسة Shell (مع id ) 
+
+ 9 
+ shell_view 
+ Shell 
+ عرض نتائج جلسة Shell 
+
+ 10 
+ shell_wait 
+ Shell 
+ انتظار عملية قيد التشغيل 
+
+ 11 
+ shell_write_to_process 
+ Shell 
+ كتابة مدخلات لعملية تفاعلية 
+
+ 12 
+ shell_kill_process 
+ Shell 
+ إنهاء عملية 
+
+ 13-24 
+ browser_* 
+ Browser 
+ 12 أداة متصفح (navigate, click, input, scroll, console_exec...) 
+
+ 25 
+ info_search_web 
+ Search 
+ بحث ويب 
+
+ 26 
+ deploy_expose_port 
+ Deploy 
+ كشف منفذ محلي للوصول العام 
+
+ 27 
+ deploy_apply_deployment 
+ Deploy 
+ نشر دائم لموقع/تطبيق 
+
+ 28 
+ make_manus_page 
+ Deploy 
+ تحويل MDX لصفحة Manus 
+
+ 29 
+ idle 
+ System 
+ الإشارة لاكتمال المهمة 
+
+ 💡 ملاحظة معمارية حاسمة: الأدوات بلا أوصاف داخل JSON ! نُقلت كل الأوصاف إلى Modules.txt لتوفير الـ tokens في كل استدعاء Joyce Birkins Analysis 4 . 
+
+ 🏛️ الجزء 3: المعمارية ثلاثية الطبقات 
+ الطبقة 1: Planner (المُخطّط) 
+
+ يستقبل الهدف عالي المستوى من المستخدم. 
+ يُنتج خطة على شكل pseudocode مُرقّم . 
+ يحدّث الخطة بشكل ديناميكي عند تغيّر المتطلبات. 
+ يعمل بنموذج قوي (Claude 3.5 Sonnet). 
+
+ الطبقة 2: Executor (المُنفّذ) 
+
+ يُنفّذ خطوة واحدة في كل دورة. 
+ يكتب Python قابل للتنفيذ (نمط CodeAct ). 
+ يعمل داخل Sandbox Ubuntu 22.04 . 
+ يعمل بنموذج أرخص لتوفير التكلفة. 
+
+ الطبقة 3: Verifier/Validator (المُتحقّق) 
+
+ يُراجع مخرجات Executor قبل تسليمها. 
+ يتحقق من المعايير الأصلية للطلب. 
+ يُشغّل اختبارات للكود قبل التسليم. 
+
+ هذه البنية هي ما تجعل Manus يشعر "تشغيلياً بدلاً من محادثاتي" : «الطبقة المُخطّطة التي تقرّر هل تتصفح، تسترجع، تكتب كوداً، أم تتوقف، هي ما يجعل الوكلاء يشعرون أنهم في خدمة تشغيلية بدلاً من مجرد محادثة» Mojeed Abisiga - LinkedIn 5 . 
+
+ 💻 الجزء 4: CodeAct — السرّ المعماري الأكبر 
+
+ «Manus حلّ هذا بقرار معماري واحد يعتمد عليه كل شيء آخر في النظام: النموذج لا يستدعي الأدوات عبر function calling — بل يكتب كود Python قابل للتنفيذ » Pankaj Pandey 6 . 
+
+ الفرق العملي 
+ الأسلوب التقليدي (Tool Calling) — ما يستخدمه Hermes حالياً: 
+ {
+ "tool": "search",
+ "args": {"query": "Python tutorials"}
+}
+// ثم لاستخدام النتيجة، استدعاء آخر منفصل
+{
+ "tool": "summarize",
+ "args": {"text": "..."}
+}
+// 3 خطوات منفصلة، 3 استدعاءات API
+
+ أسلوب Manus (CodeAct): 
+ # يكتب الوكيل كود Python واحد:
+results = search("Python tutorials")
+top_5 = sorted(results, key=lambda x: x['relevance'])[:5]
+summary = summarize([r['content'] for r in top_5])
+save_to_file('summary.md', summary)
+# خطوة واحدة، استدعاء API واحد، 4 أدوات مُنسّقة
+
+ مزايا CodeAct على Tool Calling 
+
+ المعيار 
+ Tool Calling 
+ CodeAct 
+
+ عدد الاستدعاءات للمهام المعقدة 
+ 5-15 استدعاء 
+ 1-3 استدعاء 
+
+ التكلفة 
+ عالية 
+ منخفضة جداً 
+
+ القدرة على المنطق المعقد 
+ محدودة 
+ لا نهائية (Python كامل) 
+
+ معالجة الأخطاء 
+ تحتاج retry يدوي 
+ try/except طبيعي 
+
+ التوازي 
+ صعب 
+ asyncio.gather() 
+
+ التعامل مع البيانات 
+ مرور JSON محدود 
+ متغيرات Python كاملة 
+
+ 🎭 الجزء 5: آلية المقاطعة وإعادة التخطيط (المهم لك!) 
+ هذا هو ما ذكرت أنه يميّز Manus عن غيره: «أستطيع مقاطعته وهو يغيّر مساره». 
+ كيف تعمل المقاطعة فنياً؟ 
+ ┌─────────────────────────────────────────────────────────┐
+│ 👤 المستخدم: "في الواقع، أريد PDF بدلاً من Word" │
+└──────────────────────┬──────────────────────────────────┘
+ │ (يُحقن كـ Message Event)
+ ▼
+┌─────────────────────────────────────────────────────────┐
+│ 📊 Event Stream │
+│ [Msg-1] الطلب الأصلي │
+│ [Plan-1] الخطة الأصلية │
+│ [Action-1] tool_call: file_write doc.docx │
+│ [Observation-1] تم إنشاء الملف │
+│ [Msg-2] ⚠️ تعليمات جديدة من المستخدم │ ← هنا تتم المقاطعة
+└──────────────────────┬──────────────────────────────────┘
+ │
+ ▼
+┌─────────────────────────────────────────────────────────┐
+│ 🧠 Planner Module يقرأ Event Stream │
+│ "آخر رسالة من المستخدم تتعارض مع الخطة الحالية" │
+└──────────────────────┬──────────────────────────────────┘
+ │
+ ▼
+┌─────────────────────────────────────────────────────────┐
+│ 📝 Planner ينتج Plan-2 جديدة (Pseudocode): │
+│ 1. ❌ ~~إنشاء Word document~~ │
+│ 2. ✅ تحويل المحتوى الموجود لـ PDF │
+│ 3. ✅ تنظيف الـ Word المؤقت │
+└──────────────────────┬──────────────────────────────────┘
+ │
+ ▼
+┌─────────────────────────────────────────────────────────┐
+│ 📋 todo.md يُعاد بناؤه من الصفر │
+└──────────────────────┬──────────────────────────────────┘
+ │
+ ▼
+┌─────────────────────────────────────────────────────────┐
+│ 🤖 Executor يستأنف التنفيذ بالخطة الجديدة │
+│ (مع الاحتفاظ بكل العمل السابق في Event Stream) │
+└─────────────────────────────────────────────────────────┘
+
+ اقتباس فني مباشر: «في تطبيقنا، يمكننا مراقبة ما إذا أعطى المستخدم تعليمات جديدة في منتصف المهمة، ثم نُطلق إعادة-تخطيط (re-plan)» Renschni 1 . 
+
+ 🌊 الجزء 6: Wide Research — قوة 100 وكيل بالتوازي 
+ ميزة مذهلة في Manus لا توجد في Hermes حالياً. 
+ كيف تعمل؟ 
+ المستخدم: "حلّل أفضل 100 منافس لي وأعطني تقريراً مقارناً"
+ │
+ ▼
+ ┌─────────────────────────────────────────┐
+ │ 🧠 Main Agent (Orchestrator) │
+ │ يُقسّم المهمة لـ 100 مهمة فرعية مستقلة │
+ └───┬───┬───┬───┬───┬───┬───┬───┬───┬───┘
+ │ │ │ │ │ │ │ │ │
+ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼
+ ┌───────────────────────────────────────┐
+ │ 🤖 100 Sub-Agent مستقل (parallel) │
+ │ كل واحد بـ: │
+ │ • VM خاص │
+ │ • Context window نظيف │
+ │ • Tools كاملة │
+ │ • Internet access │
+ └───┬───┬───┬───┬───┬───┬───┬───┬───┬───┘
+ │ │ │ │ │ │ │ │ │
+ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼ ▼
+ ┌─────────────────────────────────────────┐
+ │ 🧠 Main Agent يجمع النتائج │
+ │ ويُنتج التقرير النهائي في تنسيق جدول │
+ └─────────────────────────────────────────┘
+
+ اقتباس مباشر: «بدلاً من استخدام وكيل ذكاء اصطناعي واحد يعالج العناصر تسلسلياً، تنشر Wide Research مئات الوكلاء المستقلين الذين يعملون بالتوازي. كل وكيل فرعي يعمل باستقلالية كاملة بقدراته الكاملة: VM خاص، أدوات، ووصول إنت

@@ -1,0 +1,70 @@
+{
+  "total_skill_md": 717,
+  "unique_by_md5": 705,
+  "exact_duplicates": 12,
+  "groups": {
+    "codex-plugins-skills": 453,
+    "hermes-skills": 72,
+    "hermes-optional-skills": 59,
+    "openclaw-official-skills": 57,
+    "genspark-workspace-skills": 51,
+    "مهارات مانوس": 10,
+    "html-video-production": 6,
+    "excel-generator": 1,
+    "github-gem-seeker": 1,
+    "internet-skill-finder": 1,
+    "manim-animator": 1,
+    "manus-api": 1,
+    "music-prompter": 1,
+    "similarweb-analytics": 1,
+    "stock-analysis": 1,
+    "video-generator": 1
+  },
+  "duplicate_sets": {
+    "d3155e0423c21de5f421fab2a55b3a1b": [
+      "excel-generator/SKILL.md",
+      "مهارات مانوس/excel-generator/SKILL.md"
+    ],
+    "aef5057abad0fa728699b88439230cd5": [
+      "github-gem-seeker/SKILL.md",
+      "مهارات مانوس/github-gem-seeker/SKILL.md"
+    ],
+    "0a323afbfd85109730828face7702226": [
+      "html-video-production/SKILL.md",
+      "مهارات مانوس/html-video-production/SKILL.md"
+    ],
+    "e5c5e7b18f100f14ab57238631c4ff3f": [
+      "html-video-production/references/gsap/SKILL.md",
+      "مهارات مانوس/html-video-production/references/gsap/SKILL.md"
+    ],
+    "d2221882af1c2bcb2fa5793664abf55a": [
+      "html-video-production/references/hyperframes-cli/SKILL.md",
+      "مهارات مانوس/html-video-production/references/hyperframes-cli/SKILL.md"
+    ],
+    "a840b8fe9dc2fb5e64643ab4cf4436c0": [
+      "html-video-production/references/hyperframes-registry/SKILL.md",
+      "مهارات مانوس/html-video-production/references/hyperframes-registry/SKILL.md",
+      "codex-plugins-skills/plugins/hyperframes/skills/hyperframes-registry/SKILL.md"
+    ],
+    "347cbab7bf2e6b37d096f7dcb3fb2aa1": [
+      "html-video-production/references/hyperframes/SKILL.md",
+      "مهارات مانوس/html-video-production/references/hyperframes/SKILL.md"
+    ],
+    "bb82ab3c4246e03aa5e17eb92eaa8c35": [
+      "html-video-production/references/website-to-hyperframes/SKILL.md",
+      "مهارات مانوس/html-video-production/references/website-to-hyperframes/SKILL.md"
+    ],
+    "ecbafb3c6860aa067cb6615ae5135f95": [
+      "internet-skill-finder/SKILL.md",
+      "مهارات مانوس/internet-skill-finder/SKILL.md"
+    ],
+    "d0f136e9c5a623ac232a41955a6f0b91": [
+      "manim-animator/SKILL.md",
+      "مهارات مانوس/manim-animator/SKILL.md"
+    ],
+    "5663fed108b988386822365d2eaa2f0f": [
+      "codex-plugins-skills/plugins/stripe/skills/stripe-best-practices/SKILL.md",
+      "codex-plugins-skills/plugins/build-web-apps/skills/stripe-best-practices/SKILL.md"
+    ]
+  }
+}
