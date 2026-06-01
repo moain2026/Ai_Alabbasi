@@ -10,12 +10,22 @@
 """
 import sqlite3
 import re
+import sys
 from pathlib import Path
 from datetime import datetime
 
 KDIR = Path(__file__).resolve().parent
 DB_PATH = KDIR / "index" / "knowledge.db"
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+# ── بحث هجين اختياري (Phase 2) — سقوط آمن إن غاب ──
+sys.path.insert(0, str(KDIR))
+try:
+    from embedder import Embedder            # noqa
+    from hybrid_search import HybridSearch    # noqa
+    _HYBRID_OK = True
+except Exception:
+    _HYBRID_OK = False
 
 
 def _fts_query(text: str) -> str:
@@ -28,9 +38,21 @@ def _fts_query(text: str) -> str:
 
 
 class Knowledge:
-    def __init__(self, db_path: Path = DB_PATH):
+    def __init__(self, db_path: Path = DB_PATH, hybrid: bool = True):
         self.db = sqlite3.connect(str(db_path))
         self._init_schema()
+        # مُضمِّن مشترك للبحث الهجين (يُهيّأ كسولاً)
+        self.use_hybrid = hybrid and _HYBRID_OK
+        self._embedder = None
+
+    def _emb(self):
+        """يُهيّئ المُضمِّن عند أول حاجة (كسول)."""
+        if self._embedder is None and self.use_hybrid:
+            try:
+                self._embedder = Embedder()
+            except Exception:
+                self.use_hybrid = False
+        return self._embedder
 
     def _init_schema(self):
         c = self.db.cursor()
@@ -73,6 +95,62 @@ class Knowledge:
             return []
         return [{"topic": r[0], "title": r[1], "content": r[2], "source": r[3]} for r in rows]
 
+    def search_docs_hybrid(self, query: str, topic: str = None, limit: int = 4):
+        """
+        بحث هجين: يجلب مرشّحين أوسع من FTS5 ثم يُعيد ترتيبهم دلالياً عبر RRF.
+        يسقط تلقائياً إلى search_docs العادي إن لم يتوفّر المُضمِّن.
+        """
+        if not self.use_hybrid:
+            return self.search_docs(query, topic=topic, limit=limit)
+        emb = self._emb()
+        if emb is None:
+            return self.search_docs(query, topic=topic, limit=limit)
+
+        # مرشّحون من FTS (للكلمات المفتاحية الدقيقة)
+        fts_cands = self.search_docs(query, topic=topic, limit=limit * 4)
+
+        # + كنس دلالي أوسع: نجلب وثائق إضافية (نفس الموضوع) ليفهمها المُضمِّن
+        # حتى لو لم تطابق كلمات الاستعلام نصّياً (سدّ فجوة المرادفات).
+        sql = "SELECT topic,title,content,source FROM docs"
+        params = []
+        if topic:
+            sql += " WHERE topic = ?"
+            params.append(topic)
+        sql += " LIMIT ?"
+        params.append(200)   # حدّ معقول لإبقاء الترميز سريعاً
+        try:
+            extra = self.db.execute(sql, params).fetchall()
+        except sqlite3.OperationalError:
+            extra = []
+        sem_cands = [{"topic": r[0], "title": r[1], "content": r[2], "source": r[3]} for r in extra]
+
+        # دمج المرشّحين مع إزالة التكرار (حسب العنوان+المحتوى)
+        seen = set()
+        candidates = []
+        for c in fts_cands + sem_cands:
+            key = (c["title"], c["content"][:80])
+            if key not in seen:
+                seen.add(key)
+                candidates.append(c)
+
+        if len(candidates) <= limit:
+            return candidates[:limit]
+
+        # أعطِ كل مرشّح معرّفاً ثابتاً وفهرسه دلالياً
+        for i, c in enumerate(candidates):
+            c["_id"] = str(i)
+        try:
+            hs = HybridSearch(emb)
+            hs.index(candidates, id_key="_id", text_key="content")
+            # ترتيب FTS الأصلي (المرشّحون الأوائل فقط لهم رتبة FTS)
+            fts_ids = [c["_id"] for c in candidates[: len(fts_cands)]]
+            ranked = hs.search(query, fts_ids=fts_ids, limit=limit)
+        except Exception:
+            ranked = candidates[:limit]
+        for c in ranked:
+            c.pop("_id", None)
+        return ranked
+
     # ── التعلّم: المهارات ─────────────────────────────────────
     def add_skill(self, name, task, approach, code="", tags=""):
         self.db.execute(
@@ -97,7 +175,11 @@ class Knowledge:
         d = self.db.execute("SELECT count(*) FROM docs").fetchone()[0]
         s = self.db.execute("SELECT count(*) FROM skills").fetchone()[0]
         topics = [r[0] for r in self.db.execute("SELECT DISTINCT topic FROM docs").fetchall()]
-        return {"docs": d, "skills": s, "topics": topics}
+        backend = "fts5-only"
+        if self.use_hybrid:
+            emb = self._emb()
+            backend = f"hybrid ({emb.backend})" if emb else "fts5-only"
+        return {"docs": d, "skills": s, "topics": topics, "search": backend}
 
     def context_for(self, task: str, topic: str = None) -> str:
         """يبني نص سياق (RAG + skills) لحقنه في عقل الوكيل قبل مهمة."""
@@ -107,7 +189,7 @@ class Knowledge:
             parts.append("### خبرات سابقة ذات صلة (من تجاربك):")
             for s in skills:
                 parts.append(f"- [{s['name']}] {s['approach']}")
-        docs = self.search_docs(task, topic=topic)
+        docs = self.search_docs_hybrid(task, topic=topic)
         if docs:
             parts.append("\n### مراجع تقنية ذات صلة:")
             for d in docs:
