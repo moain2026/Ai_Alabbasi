@@ -120,17 +120,61 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);
 /* composer */
 .composer{padding:12px 0 20px;background:linear-gradient(transparent,var(--bg) 26%)}
 .cbox{max-width:760px;margin:0 auto;padding:0 22px}
-.input-wrap{background:var(--bg-2);border:1px solid var(--border-2);border-radius:16px;padding:8px 8px 8px 14px;
-  display:flex;align-items:flex-end;gap:8px;transition:.15s;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.input-wrap{background:var(--bg-2);border:1px solid var(--border-2);border-radius:18px;padding:10px 12px;
+  display:flex;flex-direction:column;gap:6px;transition:.15s;box-shadow:0 6px 24px rgba(0,0,0,.25)}
 .input-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+
+/* صف معاينة المرفقات */
+.attach-row{display:flex;flex-wrap:wrap;gap:8px}
+.attach-row:empty{display:none}
+.att{display:flex;align-items:center;gap:7px;background:var(--bg-3);border:1px solid var(--border-2);
+  border-radius:10px;padding:5px 8px 5px 6px;font-size:12.5px;color:var(--text-2);max-width:220px}
+.att img{width:30px;height:30px;border-radius:6px;object-fit:cover;flex-shrink:0}
+.att .ic{width:28px;height:28px;border-radius:6px;background:var(--accent-soft);display:grid;place-items:center;font-size:14px;flex-shrink:0}
+.att .nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.att .x{cursor:pointer;color:var(--text-3);font-size:15px;flex-shrink:0}
+.att .x:hover{color:#f85149}
+
+/* صف الإدخال */
+.input-row{display:flex;align-items:flex-end;gap:8px}
 textarea{flex:1;background:none;border:none;outline:none;color:var(--text);font-family:inherit;font-size:15px;
-  resize:none;max-height:180px;line-height:1.6;padding:6px 0}
+  resize:none;max-height:180px;line-height:1.6;padding:6px 2px}
 textarea::placeholder{color:var(--text-3)}
+
+/* صف أدوات الـ composer */
+.tools-row{display:flex;align-items:center;gap:4px}
+.tool-btn{width:34px;height:34px;border-radius:10px;border:none;background:transparent;color:var(--text-2);
+  cursor:pointer;display:grid;place-items:center;font-size:17px;transition:.12s;position:relative}
+.tool-btn:hover{background:var(--bg-3);color:var(--text)}
+.tool-btn.active{background:var(--accent-soft);color:var(--accent-2)}
+.tool-btn.rec{color:#f85149;animation:pulse 1.1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+.tools-spacer{flex:1}
+.skill-chip{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--accent-2);
+  border:1px solid var(--accent);border-radius:20px;padding:4px 10px;font-size:12px;cursor:pointer}
+.skill-chip .x{font-size:13px}
+
 .send{width:38px;height:38px;border-radius:11px;border:none;background:var(--accent);color:#fff;
   cursor:pointer;display:grid;place-items:center;font-size:17px;transition:.15s;flex-shrink:0}
 .send:hover{background:var(--accent-2)}
 .send:disabled{background:var(--bg-3);color:var(--text-3);cursor:not-allowed}
+.send.stop{background:#f85149}
+.send.stop:hover{background:#ff6b62}
 .hint{text-align:center;font-size:11.5px;color:var(--text-3);margin-top:8px}
+
+/* قائمة المهارات (منبثقة) */
+.skills-pop{position:absolute;bottom:54px;inset-inline-start:0;width:300px;max-height:340px;overflow-y:auto;
+  background:var(--bg-2);border:1px solid var(--border-2);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.5);
+  padding:8px;display:none;z-index:30}
+.skills-pop.open{display:block}
+.skills-pop .sp-head{font-size:12px;color:var(--text-3);padding:4px 8px 8px;font-weight:600}
+.skill-item{padding:9px 10px;border-radius:9px;cursor:pointer;display:flex;flex-direction:column;gap:2px;transition:.12s}
+.skill-item:hover{background:var(--bg-3)}
+.skill-item .si-name{font-size:13.5px;color:var(--text);font-weight:600;display:flex;align-items:center;gap:6px}
+.skill-item .si-desc{font-size:11.5px;color:var(--text-3)}
+.skill-item .si-src{font-size:10px;color:var(--accent-2);background:var(--accent-soft);padding:1px 6px;border-radius:8px}
+.skills-pop::-webkit-scrollbar{width:6px}
+.skills-pop::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:3px}
 
 @media(max-width:760px){
   .sidebar{position:absolute;inset-inline-end:0;top:0;bottom:0;z-index:20;box-shadow:-10px 0 40px rgba(0,0,0,.5)}
@@ -166,11 +210,38 @@ textarea::placeholder{color:var(--text-3)}
 
   <div class="composer">
     <div class="cbox">
-      <div class="input-wrap">
-        <textarea id="input" rows="1" placeholder="كلّف الوكيل بمهمة… (Enter للإرسال، Shift+Enter لسطر جديد)"></textarea>
-        <button class="send" id="sendBtn" onclick="send()">➤</button>
+      <div class="input-wrap" style="position:relative">
+
+        <!-- قائمة المهارات المنبثقة -->
+        <div class="skills-pop" id="skillsPop">
+          <div class="sp-head">🧩 اختر مهارة لتوجيه الوكيل</div>
+          <div id="skillsList"></div>
+        </div>
+
+        <!-- معاينة المرفقات + المهارة المختارة -->
+        <div class="attach-row" id="attachRow"></div>
+
+        <!-- صندوق النص -->
+        <div class="input-row">
+          <textarea id="input" rows="1" placeholder="كلّف الوكيل بمهمة… (Enter للإرسال، Shift+Enter لسطر جديد)"></textarea>
+        </div>
+
+        <!-- صف الأدوات -->
+        <div class="tools-row">
+          <button class="tool-btn" id="btnFile"  onclick="fileInput.click()"  title="إرفاق ملف">📎</button>
+          <button class="tool-btn" id="btnImage" onclick="imageInput.click()" title="إرفاق صورة">🖼️</button>
+          <button class="tool-btn" id="btnSkill" onclick="toggleSkills()"      title="المهارات">🧩</button>
+          <button class="tool-btn" id="btnRec"   onclick="toggleRecord()"      title="إملاء صوتي">🎤</button>
+          <div class="tools-spacer"></div>
+          <button class="send" id="sendBtn" onclick="onSendClick()" title="إرسال">➤</button>
+        </div>
+
+        <!-- مدخلات الملفات المخفية -->
+        <input type="file" id="fileInput"  hidden multiple
+               accept=".txt,.md,.json,.csv,.yaml,.yml,.py,.js,.ts,.html,.css,.sql,.sh,.xml,.log,.pdf">
+        <input type="file" id="imageInput" hidden multiple accept="image/*">
       </div>
-      <div class="hint">الوكيل ينفّذ مهام حقيقية داخل مجلد <code>projects/</code> — راقب خطواته لحظياً.</div>
+      <div class="hint">الوكيل ينفّذ مهام حقيقية داخل مجلد <code>projects/</code> — أرفِق ملفات/صور، اختر مهارة، أو أوقفه في أي لحظة.</div>
     </div>
   </div>
 </main>
@@ -178,6 +249,13 @@ textarea::placeholder{color:var(--text-3)}
 <script>
 const $ = s => document.querySelector(s);
 let convId = null, busy = false;
+
+// ─────── حالة المرفقات والمهارة ───────
+let attachments = [];          // [{name, is_image, url}]
+let selectedSkill = null;      // اسم المهارة المختارة
+let skillsCache = null;        // قائمة المهارات (تُحمّل مرة)
+const fileInput  = () => document.getElementById('fileInput');
+const imageInput = () => document.getElementById('imageInput');
 
 // شعار Ai_Albbasi agent — الشعار الرسمي (صورة)
 const LOGO = `<img src="/assets/logo-128.png" alt="Ai_Albbasi" style="width:100%;height:100%;object-fit:contain">`;
@@ -303,13 +381,117 @@ function renderSteps(steps){
 }
 function scrollDown(){ const c=$('#chat'); c.scrollTop=c.scrollHeight; }
 
+// ═══════════ المرفقات (رفع ملفات/صور) ═══════════
+async function uploadFiles(fileList){
+  for(const f of fileList){
+    try{
+      const fd=new FormData(); fd.append('file', f);
+      const r=await (await fetch('/api/upload',{method:'POST',body:fd})).json();
+      if(r.ok){ attachments.push(r); }
+      else{ alert('تعذّر رفع '+f.name+': '+(r.error||'')); }
+    }catch(e){ alert('فشل الرفع: '+e.message); }
+  }
+  renderAttachments();
+}
+function renderAttachments(){
+  const row=$('#attachRow'); row.innerHTML='';
+  // المهارة المختارة
+  if(selectedSkill){
+    const c=document.createElement('div'); c.className='att';
+    c.innerHTML=`<div class="ic">🧩</div><span class="nm">${esc(selectedSkill)}</span><span class="x" title="إزالة">✕</span>`;
+    c.querySelector('.x').onclick=()=>{selectedSkill=null;renderAttachments();updateSkillBtn();};
+    row.appendChild(c);
+  }
+  // الملفات
+  attachments.forEach((a,i)=>{
+    const c=document.createElement('div'); c.className='att';
+    const thumb = a.is_image ? `<img src="${a.url}" alt="">` : `<div class="ic">📄</div>`;
+    c.innerHTML=`${thumb}<span class="nm">${esc(a.name)}</span><span class="x" title="إزالة">✕</span>`;
+    c.querySelector('.x').onclick=()=>{ removeAttachment(i); };
+    row.appendChild(c);
+  });
+}
+async function removeAttachment(i){
+  const a=attachments[i];
+  attachments.splice(i,1); renderAttachments();
+  try{ await fetch('/api/files/'+encodeURIComponent(a.name),{method:'DELETE'}); }catch(e){}
+}
+
+// ═══════════ المهارات ═══════════
+async function toggleSkills(){
+  const pop=$('#skillsPop');
+  if(pop.classList.contains('open')){ pop.classList.remove('open'); return; }
+  if(!skillsCache){
+    try{ skillsCache = await (await fetch('/api/skills')).json(); }
+    catch(e){ skillsCache=[]; }
+  }
+  const list=$('#skillsList'); list.innerHTML='';
+  if(!skillsCache.length){ list.innerHTML='<div class="si-desc" style="padding:8px">لا توجد مهارات بعد.</div>'; }
+  skillsCache.forEach(s=>{
+    const d=document.createElement('div'); d.className='skill-item';
+    d.innerHTML=`<div class="si-name">🧩 ${esc(s.name)} <span class="si-src">${esc(s.source||'')}</span></div>
+      <div class="si-desc">${esc(s.desc||'')}</div>`;
+    d.onclick=()=>{ selectedSkill=s.name; pop.classList.remove('open'); renderAttachments(); updateSkillBtn(); };
+    list.appendChild(d);
+  });
+  pop.classList.add('open');
+}
+function updateSkillBtn(){ $('#btnSkill').classList.toggle('active', !!selectedSkill); }
+// إغلاق قائمة المهارات عند النقر خارجها
+document.addEventListener('click',e=>{
+  const pop=$('#skillsPop');
+  if(pop && pop.classList.contains('open') && !pop.contains(e.target) && e.target.id!=='btnSkill'){
+    pop.classList.remove('open');
+  }
+});
+
+// ═══════════ التسجيل الصوتي (إملاء) ═══════════
+let recognition=null, recording=false;
+function toggleRecord(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ alert('متصفّحك لا يدعم الإملاء الصوتي. جرّب Chrome.'); return; }
+  if(recording){ recognition && recognition.stop(); return; }
+  recognition = new SR();
+  recognition.lang='ar-SA'; recognition.continuous=true; recognition.interimResults=true;
+  let base = $('#input').value;
+  recognition.onstart=()=>{ recording=true; $('#btnRec').classList.add('rec'); };
+  recognition.onresult=(e)=>{
+    let txt='';
+    for(let i=e.resultIndex;i<e.results.length;i++) txt+=e.results[i][0].transcript;
+    $('#input').value=(base?base+' ':'')+txt;
+    $('#input').dispatchEvent(new Event('input'));
+  };
+  recognition.onerror=()=>{ stopRecord(); };
+  recognition.onend=()=>{ stopRecord(); };
+  recognition.start();
+}
+function stopRecord(){ recording=false; $('#btnRec').classList.remove('rec'); }
+
+// ═══════════ زر الإرسال/الإيقاف ═══════════
+function onSendClick(){ if(busy){ stopTask(); } else { send(); } }
+async function stopTask(){
+  if(convId){ try{ await fetch('/api/stop/'+convId,{method:'POST'}); }catch(e){} }
+}
+function setSendMode(running){
+  const b=$('#sendBtn');
+  if(running){ b.classList.add('stop'); b.textContent='■'; b.title='إيقاف'; b.disabled=false; }
+  else{ b.classList.remove('stop'); b.textContent='➤'; b.title='إرسال'; }
+}
+
 // ─────── الإرسال + البث المباشر ───────
 async function send(){
   const inp=$('#input'); const text=inp.value.trim();
-  if(!text||busy)return;
+  if((!text && !attachments.length)||busy)return;
   if(!convId){ await newConv(); }
-  busy=true; $('#sendBtn').disabled=true; inp.value=''; inp.style.height='auto';
-  addUser(text);
+  busy=true; setSendMode(true); inp.value=''; inp.style.height='auto';
+  // نص العرض للمستخدم (مع أسماء المرفقات)
+  let dispText=text;
+  if(attachments.length) dispText += (text?'\n':'')+attachments.map(a=>(a.is_image?'🖼️ ':'📄 ')+a.name).join('  ');
+  if(selectedSkill) dispText = '🧩 '+selectedSkill+'\n'+dispText;
+  addUser(dispText||'(مرفقات)');
+  const sentAttachments = attachments.map(a=>a.name);
+  const sentSkill = selectedSkill;
+  attachments=[]; selectedSkill=null; renderAttachments(); updateSkillBtn();
 
   // بطاقة المساعد الحية
   clearWelcome();
@@ -329,7 +511,8 @@ async function send(){
   try{
     const res=await fetch('/api/chat/stream',{method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({conv_id:convId, message:text})});
+      body:JSON.stringify({conv_id:convId, message:text,
+        attachments:sentAttachments, skill:sentSkill})});
     const reader=res.body.getReader(); const dec=new TextDecoder(); let buf='';
     while(true){
       const {value,done}=await reader.read(); if(done)break;
@@ -353,6 +536,8 @@ async function send(){
           liveBody.innerHTML=liveRows+`<div class="live-line"><span class="spin"></span> يفكّر…</div>`;
         } else if(ev.kind==='done'){
           liveContent.innerHTML=fmt(ev.data);
+        } else if(ev.kind==='stopped'){
+          liveContent.innerHTML=`<span style="color:var(--warn)">${esc(ev.data)}</span>`;
         } else if(ev.kind==='error'){
           liveContent.innerHTML=`<span style="color:#f85149">⚠️ خطأ: ${esc(ev.data)}</span>`;
         } else if(ev.kind==='end'){
@@ -366,7 +551,7 @@ async function send(){
   }catch(e){
     liveContent.innerHTML=`<span style="color:#f85149">⚠️ فشل الاتصال: ${esc(e.message)}</span>`;
   }finally{
-    busy=false; $('#sendBtn').disabled=false;
+    busy=false; setSendMode(false);
     loadConvs();
   }
 }
@@ -375,7 +560,24 @@ async function send(){
 const inp=$('#input');
 inp.addEventListener('input',()=>{inp.style.height='auto';inp.style.height=Math.min(inp.scrollHeight,180)+'px';});
 inp.addEventListener('keydown',e=>{
-  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();if(!busy)send();}
+});
+
+// رفع الملفات/الصور عند الاختيار
+fileInput().addEventListener('change',e=>{ if(e.target.files.length){uploadFiles(e.target.files);} e.target.value=''; });
+imageInput().addEventListener('change',e=>{ if(e.target.files.length){uploadFiles(e.target.files);} e.target.value=''; });
+
+// لصق صورة من الحافظة (paste)
+inp.addEventListener('paste',e=>{
+  const items=[...(e.clipboardData?.items||[])].filter(i=>i.type.startsWith('image/'));
+  if(items.length){ uploadFiles(items.map(i=>i.getAsFile())); }
+});
+
+// سحب وإفلات (drag & drop)
+document.body.addEventListener('dragover',e=>{e.preventDefault();});
+document.body.addEventListener('drop',e=>{
+  e.preventDefault();
+  if(e.dataTransfer?.files?.length){ uploadFiles(e.dataTransfer.files); }
 });
 
 boot();

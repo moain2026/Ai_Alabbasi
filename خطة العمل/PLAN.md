@@ -146,12 +146,33 @@
 🔬 ما تعلمته: RRF يحقّق 92.3% Recall@5 بدون معايرة أوزان
 ```
 
-### [التالي] — بانتظار إذن معين ببدء المرحلة 1
+### 2026-06-01 (2) — بدء التنفيذ: تطوير الواجهة (المرحلة 5 — مُقدَّمة)
 ```
-🔜 الخطوة القادمة عند الإذن:
-   1. git checkout -b upgrade/v2-manus-patterns
-   2. نسخ PLAN.md للجذر + commit أول
-   3. بدء 1.1 (event_stream.py) مع دورة المهمة الكاملة
+✅ أنشأت فرع upgrade/v2-manus-patterns
+✅ حلّلت الواجهة الحالية + واجهتَي Manus و Genspark
+✅ طوّرت web/server.py — 5 endpoints جديدة:
+   • POST /api/upload          — رفع ملفات/صور (مع فحص امتداد + حجم 20MB)
+   • GET  /api/files           — سرد المرفقات
+   • DELETE /api/files/{name}  — حذف مرفق
+   • GET  /api/skills          — قائمة المهارات (self-learned + external + builtin)
+   • POST /api/stop/{conv_id}  — إيقاف المهمة الجارية (cancellation)
+✅ طوّرت web/index.html — شريط أدوات composer كامل:
+   • 📎 إرفاق ملفات  • 🖼️ إرفاق صور  • 🧩 اختيار مهارة (قائمة منبثقة)
+   • 🎤 إملاء صوتي (Web Speech API)  • ■ زر إيقاف يتحوّل أثناء التنفيذ
+   • معاينة المرفقات (thumbnails) + لصق صورة + سحب وإفلات
+✅ اختبرت كل الـ endpoints بنجاح (رفع/سرد/حذف/إيقاف/مهارات + رفض .exe)
+✅ الواجهة تُحمّل بلا أخطاء console
+📝 ملاحظة: المرفقات تُخزَّن في projects/_uploads/ (ضمن نطاق _safe_path)
+🔬 أمان: تنظيف أسماء الملفات (path-traversal) + قائمة امتدادات بيضاء
+```
+
+### [التالي] — استكمال المرحلة 1 (أنماط Manus الأساسية)
+```
+🔜 الخطوات القادمة:
+   1. agent/event_stream.py (1.1)
+   2. agent/planner.py (1.2)
+   3. agent/todo_manager.py (1.3)
+   4. ربط الواجهة الجديدة ببث الأحداث الحيّ (WebSocket — المرحلة 5)
 ```
 
 ---
