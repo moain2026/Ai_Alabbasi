@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Ai_Albbasi agent — العباسي</title>
+<link rel="icon" href="/assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="/assets/logo-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/logo-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d0d0f; --bg-2:#16161a; --bg-3:#1d1d22; --bg-hover:#26262c;
+  --border:#2a2a31; --border-2:#34343c;
+  --text:#ececf1; --text-2:#a8a8b3; --text-3:#6e6e78;
+  --accent:#7c5cff; --accent-2:#9d83ff; --accent-soft:rgba(124,92,255,.12);
+  --user-bub:#23232b; --ok:#3fb950; --warn:#d29922; --tool:#58a6ff;
+  --radius:14px; --sidebar-w:280px;
+  --font:'IBM Plex Sans Arabic',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--font);background:var(--bg);color:var(--text);
+  display:flex;overflow:hidden;font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased}
+
+/* ─────────── SIDEBAR ─────────── */
+.sidebar{width:var(--sidebar-w);background:var(--bg-2);border-inline-start:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;transition:margin .25s}
+.sidebar.collapsed{margin-inline-end:calc(-1*var(--sidebar-w))}
+.sb-head{padding:18px 16px 12px;display:flex;align-items:center;gap:10px}
+.logo{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;overflow:hidden;
+  box-shadow:0 4px 14px rgba(0,0,0,.3)}
+.logo img{width:100%;height:100%;object-fit:contain}
+.brand{font-weight:700;font-size:16px;letter-spacing:-.2px}
+.brand small{display:block;font-weight:400;font-size:11px;color:var(--text-3)}
+.new-btn{margin:6px 14px 12px;padding:11px 14px;border-radius:11px;border:1px solid var(--border-2);
+  background:var(--bg-3);color:var(--text);font-family:inherit;font-size:14px;font-weight:500;
+  cursor:pointer;display:flex;align-items:center;gap:9px;transition:.15s;width:calc(100% - 28px)}
+.new-btn:hover{background:var(--bg-hover);border-color:var(--accent)}
+.conv-list{flex:1;overflow-y:auto;padding:4px 10px;display:flex;flex-direction:column;gap:2px}
+.conv-list::-webkit-scrollbar{width:6px}
+.conv-list::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:3px}
+.conv{padding:10px 12px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:9px;
+  color:var(--text-2);font-size:13.5px;transition:.12s;position:relative}
+.conv:hover{background:var(--bg-3);color:var(--text)}
+.conv.active{background:var(--accent-soft);color:var(--text)}
+.conv .ttl{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv .del{opacity:0;font-size:16px;color:var(--text-3);transition:.12s}
+.conv:hover .del{opacity:1}
+.conv .del:hover{color:#f85149}
+.sb-foot{padding:12px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--text-3)}
+.brain-pick{width:100%;background:var(--bg-3);color:var(--text-2);border:1px solid var(--border);
+  border-radius:9px;padding:8px 10px;font-family:inherit;font-size:12.5px;cursor:pointer;margin-top:6px}
+
+/* ─────────── MAIN ─────────── */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;position:relative}
+.topbar{height:54px;display:flex;align-items:center;gap:12px;padding:0 18px;border-bottom:1px solid var(--border);
+  background:rgba(13,13,15,.7);backdrop-filter:blur(8px);position:sticky;top:0;z-index:5}
+.icon-btn{width:36px;height:36px;border-radius:9px;border:none;background:transparent;color:var(--text-2);
+  cursor:pointer;display:grid;place-items:center;font-size:19px;transition:.12s}
+.icon-btn:hover{background:var(--bg-3);color:var(--text)}
+.topbar .title{font-weight:600;font-size:15px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.model-chip{font-size:12px;color:var(--accent-2);background:var(--accent-soft);padding:5px 11px;border-radius:20px;white-space:nowrap}
+
+.chat{flex:1;overflow-y:auto;padding:26px 0 14px}
+.chat::-webkit-scrollbar{width:9px}
+.chat::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:5px}
+.wrap{max-width:760px;margin:0 auto;padding:0 22px}
+
+/* welcome */
+.welcome{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;gap:8px;padding:30px}
+.welcome .big{width:88px;height:88px;margin-bottom:10px;filter:drop-shadow(0 10px 30px rgba(0,0,0,.4))}
+.welcome .big svg,.welcome .big img{width:100%;height:100%}
+.welcome h1{font-size:25px;font-weight:700;letter-spacing:-.5px}
+.welcome p{color:var(--text-2);max-width:420px}
+.suggest{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:22px}
+.chip{padding:11px 16px;background:var(--bg-2);border:1px solid var(--border);border-radius:12px;
+  font-size:13.5px;color:var(--text-2);cursor:pointer;transition:.15s}
+.chip:hover{border-color:var(--accent);color:var(--text);background:var(--bg-3)}
+
+/* messages */
+.msg{margin-bottom:24px;display:flex;gap:13px;animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.av{width:32px;height:32px;border-radius:9px;flex-shrink:0;display:grid;place-items:center;font-size:15px;margin-top:2px}
+.msg.user .av{background:var(--user-bub);border:1px solid var(--border-2)}
+.msg.bot .av{background:transparent;padding:0;overflow:hidden;border-radius:9px}
+.msg.bot .av svg,.msg.bot .av img{width:32px;height:32px}
+.bubble{flex:1;min-width:0}
+.who{font-size:12.5px;color:var(--text-3);margin-bottom:5px;font-weight:600}
+.content{white-space:pre-wrap;word-break:break-word}
+.content code{background:var(--bg-3);padding:2px 6px;border-radius:6px;font-size:.9em;font-family:ui-monospace,monospace}
+.content pre{background:#0a0a0c;border:1px solid var(--border);border-radius:10px;padding:14px;overflow-x:auto;margin:10px 0}
+.content pre code{background:none;padding:0}
+
+/* steps panel (المسار) */
+.steps{margin:8px 0 4px;border:1px solid var(--border);border-radius:12px;background:var(--bg-2);overflow:hidden}
+.steps-head{padding:10px 14px;display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13px;color:var(--text-2);user-select:none}
+.steps-head:hover{background:var(--bg-3)}
+.steps-head .sp{flex:1}
+.steps-head .chev{transition:.2s}
+.steps.open .steps-head .chev{transform:rotate(90deg)}
+.steps-body{display:none;padding:4px 14px 12px;border-top:1px solid var(--border)}
+.steps.open .steps-body{display:block}
+.step{display:flex;gap:10px;padding:7px 0;font-size:13px;align-items:flex-start}
+.step .dot{margin-top:6px;width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--text-3)}
+.step.thought .dot{background:var(--accent)}
+.step.tool .dot{background:var(--tool)}
+.step.result .dot{background:var(--ok)}
+.step .tx{flex:1;color:var(--text-2);min-width:0}
+.step .tx b{color:var(--text);font-weight:600}
+.step .tx pre{background:#0a0a0c;border:1px solid var(--border);border-radius:8px;padding:9px 11px;
+  margin-top:5px;font-size:12px;max-height:200px;overflow:auto;white-space:pre-wrap;word-break:break-word;color:var(--text-2)}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid var(--border-2);border-top-color:var(--accent);
+  border-radius:50%;animation:rot .7s linear infinite;vertical-align:-2px}
+@keyframes rot{to{transform:rotate(360deg)}}
+.live-line{display:flex;align-items:center;gap:8px;color:var(--text-2);font-size:13.5px;padding:4px 0}
+
+/* composer */
+.composer{padding:12px 0 20px;background:linear-gradient(transparent,var(--bg) 26%)}
+.cbox{max-width:760px;margin:0 auto;padding:0 22px}
+.input-wrap{background:var(--bg-2);border:1px solid var(--border-2);border-radius:16px;padding:8px 8px 8px 14px;
+  display:flex;align-items:flex-end;gap:8px;transition:.15s;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.input-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+textarea{flex:1;background:none;border:none;outline:none;color:var(--text);font-family:inherit;font-size:15px;
+  resize:none;max-height:180px;line-height:1.6;padding:6px 0}
+textarea::placeholder{color:var(--text-3)}
+.send{width:38px;height:38px;border-radius:11px;border:none;background:var(--accent);color:#fff;
+  cursor:pointer;display:grid;place-items:center;font-size:17px;transition:.15s;flex-shrink:0}
+.send:hover{background:var(--accent-2)}
+.send:disabled{background:var(--bg-3);color:var(--text-3);cursor:not-allowed}
+.hint{text-align:center;font-size:11.5px;color:var(--text-3);margin-top:8px}
+
+@media(max-width:760px){
+  .sidebar{position:absolute;inset-inline-end:0;top:0;bottom:0;z-index:20;box-shadow:-10px 0 40px rgba(0,0,0,.5)}
+  .sidebar.collapsed{margin-inline-end:calc(-1*var(--sidebar-w))}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-head">
+    <div class="logo" id="logoBox"></div>
+    <div class="brand">Ai_Albbasi<small>العباسي — الوكيل الذكي</small></div>
+  </div>
+  <button class="new-btn" onclick="newConv()">＋ محادثة جديدة</button>
+  <div class="conv-list" id="convList"></div>
+  <div class="sb-foot">
+    العقل الحالي:
+    <select class="brain-pick" id="brainPick" onchange="changeBrain(this.value)"></select>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <button class="icon-btn" onclick="toggleSidebar()" title="القائمة">☰</button>
+    <div class="title" id="topTitle">Ai_Albbasi agent</div>
+    <div class="model-chip" id="modelChip">…</div>
+  </div>
+
+  <div class="chat" id="chat"></div>
+
+  <div class="composer">
+    <div class="cbox">
+      <div class="input-wrap">
+        <textarea id="input" rows="1" placeholder="كلّف الوكيل بمهمة… (Enter للإرسال، Shift+Enter لسطر جديد)"></textarea>
+        <button class="send" id="sendBtn" onclick="send()">➤</button>
+      </div>
+      <div class="hint">الوكيل ينفّذ مهام حقيقية داخل مجلد <code>projects/</code> — راقب خطواته لحظياً.</div>
+    </div>
+  </div>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+let convId = null, busy = false;
+
+// شعار Ai_Albbasi agent — الشعار الرسمي (صورة)
+const LOGO = `<img src="/assets/logo-128.png" alt="Ai_Albbasi" style="width:100%;height:100%;object-fit:contain">`;
+const LOGO_BIG = `<img src="/assets/logo-256.png" alt="Ai_Albbasi" style="width:100%;height:100%;object-fit:contain">`;
+document.addEventListener('DOMContentLoaded',()=>{const b=document.getElementById('logoBox');if(b)b.innerHTML=LOGO;});
+
+// ─────── إقلاع ───────
+async function boot(){
+  await loadBrains();
+  await loadConvs();
+  if(!convId) renderWelcome();
+}
+function toggleSidebar(){ $('#sidebar').classList.toggle('collapsed'); }
+
+// ─────── العقول ───────
+async function loadBrains(){
+  const d = await (await fetch('/api/brains')).json();
+  const sel = $('#brainPick'); sel.innerHTML='';
+  for(const [k,v] of Object.entries(d.brains)){
+    const o=document.createElement('option');
+    o.value=k; o.textContent=v.model; if(k===d.active)o.selected=true;
+    sel.appendChild(o);
+  }
+  const active = d.brains[d.active];
+  $('#modelChip').textContent = active ? active.model : d.active;
+}
+async function changeBrain(k){
+  await fetch('/api/brain/'+k,{method:'POST'});
+  await loadBrains();
+}
+
+// ─────── المحادثات ───────
+async function loadConvs(){
+  const list = await (await fetch('/api/conversations')).json();
+  const el = $('#convList'); el.innerHTML='';
+  list.forEach(c=>{
+    const d=document.createElement('div');
+    d.className='conv'+(c.id===convId?' active':'');
+    d.innerHTML=`<span>💬</span><span class="ttl">${esc(c.title)}</span><span class="del" title="حذف">✕</span>`;
+    d.querySelector('.ttl').onclick=()=>openConv(c.id);
+    d.querySelector('span:first-child').onclick=()=>openConv(c.id);
+    d.querySelector('.del').onclick=(e)=>{e.stopPropagation();delConv(c.id);};
+    el.appendChild(d);
+  });
+}
+async function newConv(){
+  const r = await (await fetch('/api/conversations',{method:'POST',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({title:'محادثة جديدة'})})).json();
+  convId=r.id; await loadConvs(); renderWelcome();
+  if(window.innerWidth<=760)$('#sidebar').classList.add('collapsed');
+}
+async function delConv(id){
+  if(!confirm('حذف هذه المحادثة؟'))return;
+  await fetch('/api/conversations/'+id,{method:'DELETE'});
+  if(id===convId){convId=null;}
+  await loadConvs();
+  if(!convId)renderWelcome();
+}
+async function openConv(id){
+  convId=id; await loadConvs();
+  const msgs = await (await fetch(`/api/conversations/${id}/messages`)).json();
+  $('#chat').innerHTML=''; $('#topTitle').textContent = document.querySelector('.conv.active .ttl')?.textContent||'محادثة';
+  msgs.forEach(m=>{
+    if(m.role==='user') addUser(m.content);
+    else addBot(m.content, m.steps||[]);
+  });
+  scrollDown();
+  if(window.innerWidth<=760)$('#sidebar').classList.add('collapsed');
+}
+
+// ─────── العرض ───────
+function renderWelcome(){
+  $('#topTitle').textContent='Ai_Albbasi agent';
+  $('#chat').innerHTML=`<div class="welcome">
+    <div class="big">${LOGO_BIG}</div>
+    <h1>Ai_Albbasi agent — العباسي</h1>
+    <p>أنا الوكيل الذكي. كلّفني بأي مهمة برمجية وسأنفّذها بنفسي خطوة بخطوة — وأنت تراقب تفكيري وأدواتي مباشرة.</p>
+    <div class="suggest">
+      <div class="chip" onclick="quick(this)">أنشئ صفحة HTML لعرض الوقت الحالي</div>
+      <div class="chip" onclick="quick(this)">اكتب دالة بايثون تحسب الأعداد الأولية واختبرها</div>
+      <div class="chip" onclick="quick(this)">أنشئ ملف README احترافي لمشروع</div>
+    </div></div>`;
+}
+function quick(el){ $('#input').value=el.textContent; send(); }
+
+function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function fmt(s){
+  s=esc(s);
+  s=s.replace(/```([\s\S]*?)```/g,(m,c)=>`<pre><code>${c.trim()}</code></pre>`);
+  s=s.replace(/`([^`]+)`/g,'<code>$1</code>');
+  s=s.replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>');
+  return s;
+}
+function clearWelcome(){ if($('.welcome'))$('#chat').innerHTML=''; }
+
+function addUser(text){
+  clearWelcome();
+  const d=document.createElement('div');
+  d.className='msg user';
+  d.innerHTML=`<div class="av">🧑</div><div class="bubble"><div class="who">أنت</div><div class="content">${fmt(text)}</div></div>`;
+  $('#chat').appendChild(d); scrollDown();
+}
+function addBot(text, steps){
+  clearWelcome();
+  const d=document.createElement('div');
+  d.className='msg bot';
+  let stepsHtml = steps && steps.length ? renderSteps(steps) : '';
+  d.innerHTML=`<div class="av">${LOGO}</div><div class="bubble"><div class="who">Ai_Albbasi</div>
+    ${stepsHtml}<div class="content">${fmt(text)}</div></div>`;
+  $('#chat').appendChild(d); scrollDown();
+}
+function renderSteps(steps){
+  let rows='';
+  steps.forEach(ev=>{
+    if(ev.kind==='thought') rows+=`<div class="step thought"><span class="dot"></span><div class="tx">${esc(ev.data)}</div></div>`;
+    else if(ev.kind==='tool') rows+=`<div class="step tool"><span class="dot"></span><div class="tx"><b>${esc(ev.data.name)}</b> <code>${esc(JSON.stringify(ev.data.args).slice(0,120))}</code></div></div>`;
+    else if(ev.kind==='tool_result') rows+=`<div class="step result"><span class="dot"></span><div class="tx">النتيجة<pre>${esc(ev.data.result)}</pre></div></div>`;
+  });
+  const n = steps.filter(s=>s.kind==='tool').length;
+  return `<div class="steps"><div class="steps-head" onclick="this.parentNode.classList.toggle('open')">
+    <span class="chev">▸</span><span class="sp">🔧 مسار التنفيذ — ${n} أداة</span></div>
+    <div class="steps-body">${rows}</div></div>`;
+}
+function scrollDown(){ const c=$('#chat'); c.scrollTop=c.scrollHeight; }
+
+// ─────── الإرسال + البث المباشر ───────
+async function send(){
+  const inp=$('#input'); const text=inp.value.trim();
+  if(!text||busy)return;
+  if(!convId){ await newConv(); }
+  busy=true; $('#sendBtn').disabled=true; inp.value=''; inp.style.height='auto';
+  addUser(text);
+
+  // بطاقة المساعد الحية
+  clearWelcome();
+  const bot=document.createElement('div'); bot.className='msg bot';
+  bot.innerHTML=`<div class="av">${LOGO}</div><div class="bubble"><div class="who">Ai_Albbasi</div>
+    <div class="steps open"><div class="steps-head" onclick="this.parentNode.classList.toggle('open')">
+      <span class="chev">▸</span><span class="sp">🔧 يعمل الآن…</span></div>
+      <div class="steps-body" id="liveBody"><div class="live-line"><span class="spin"></span> يفكّر…</div></div></div>
+    <div class="content" id="liveContent"></div></div>`;
+  $('#chat').appendChild(bot); scrollDown();
+  const liveBody=bot.querySelector('#liveBody');
+  const liveContent=bot.querySelector('#liveContent');
+  const sp=bot.querySelector('.sp');
+  const stepsPanel=bot.querySelector('.steps');
+  let toolCount=0, liveRows='';
+
+  try{
+    const res=await fetch('/api/chat/stream',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({conv_id:convId, message:text})});
+    const reader=res.body.getReader(); const dec=new TextDecoder(); let buf='';
+    while(true){
+      const {value,done}=await reader.read(); if(done)break;
+      buf+=dec.decode(value,{stream:true});
+      let parts=buf.split('\n\n'); buf=parts.pop();
+      for(const p of parts){
+        const line=p.split('\n').find(l=>l.startsWith('data:'));
+        if(!line)continue;
+        const ev=JSON.parse(line.slice(5).trim());
+        if(ev.kind==='step'){
+          liveBody.querySelector('.live-line')?.remove();
+        } else if(ev.kind==='thought'){
+          liveRows+=`<div class="step thought"><span class="dot"></span><div class="tx">${esc(ev.data)}</div></div>`;
+          liveBody.innerHTML=liveRows+`<div class="live-line"><span class="spin"></span> ينفّذ…</div>`;
+        } else if(ev.kind==='tool'){
+          toolCount++; sp.textContent=`🔧 يعمل الآن… (${toolCount} أداة)`;
+          liveRows+=`<div class="step tool"><span class="dot"></span><div class="tx"><b>${esc(ev.data.name)}</b> <code>${esc(JSON.stringify(ev.data.args).slice(0,120))}</code></div></div>`;
+          liveBody.innerHTML=liveRows+`<div class="live-line"><span class="spin"></span> ينتظر النتيجة…</div>`;
+        } else if(ev.kind==='tool_result'){
+          liveRows+=`<div class="step result"><span class="dot"></span><div class="tx">النتيجة<pre>${esc(ev.data.result)}</pre></div></div>`;
+          liveBody.innerHTML=liveRows+`<div class="live-line"><span class="spin"></span> يفكّر…</div>`;
+        } else if(ev.kind==='done'){
+          liveContent.innerHTML=fmt(ev.data);
+        } else if(ev.kind==='error'){
+          liveContent.innerHTML=`<span style="color:#f85149">⚠️ خطأ: ${esc(ev.data)}</span>`;
+        } else if(ev.kind==='end'){
+          liveBody.querySelector('.live-line')?.remove();
+          sp.textContent=`🔧 مسار التنفيذ — ${toolCount} أداة`;
+          stepsPanel.classList.remove('open');
+        }
+        scrollDown();
+      }
+    }
+  }catch(e){
+    liveContent.innerHTML=`<span style="color:#f85149">⚠️ فشل الاتصال: ${esc(e.message)}</span>`;
+  }finally{
+    busy=false; $('#sendBtn').disabled=false;
+    loadConvs();
+  }
+}
+
+// إدخال
+const inp=$('#input');
+inp.addEventListener('input',()=>{inp.style.height='auto';inp.style.height=Math.min(inp.scrollHeight,180)+'px';});
+inp.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}
+});
+
+boot();
+</script>
+</body>
+</html>

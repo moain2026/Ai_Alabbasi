@@ -75,14 +75,23 @@ def extract_json(text: str):
 
 
 class Agent:
-    def __init__(self, max_steps: int = 25, verbose: bool = True, topic: str = None, learn: bool = True):
+    def __init__(self, max_steps: int = 25, verbose: bool = True, topic: str = None, learn: bool = True, on_event=None):
         self.brain = Brain()
         self.max_steps = max_steps
         self.verbose = verbose
         self.topic = topic            # تقنية التركيز (react-native/nextjs/angular) للـ RAG
         self.learn = learn            # حفظ skill بعد النجاح
         self.kb = Knowledge() if Knowledge else None
+        self.on_event = on_event      # callback(kind, data) للبث المباشر (الواجهة)
         self.log_path = LOG_DIR / f"run_{datetime.now():%Y%m%d_%H%M%S}.log"
+
+    def _emit(self, kind: str, data):
+        """يبث حدثاً للمستمع (الواجهة) إن وُجد."""
+        if self.on_event:
+            try:
+                self.on_event(kind, data)
+            except Exception:
+                pass
 
     def _log(self, msg: str):
         if self.verbose:
@@ -113,29 +122,47 @@ class Agent:
             {"role": "user", "content": user_msg},
         ]
 
+        self._emit("start", {"task": task, "model": info["model"]})
         for step in range(1, self.max_steps + 1):
             self._log(f"\n──── الخطوة {step}/{self.max_steps} ────")
+            self._emit("step", {"n": step, "total": self.max_steps})
             try:
                 reply = self.brain.think(messages)
             except Exception as e:
                 self._log(f"❌ خطأ في العقل: {e}")
                 return f"فشل: {e}"
 
+            # كشف أخطاء المزوّد (رصيد/مفتاح) — أوقف فوراً بدل التكرار
+            low = reply.lower()
+            if any(s in low for s in ["credits have been exhausted", "insufficient", "quota", "unauthorized", "invalid api key", "rate limit exceeded"]):
+                self._log(f"\n⛔ خطأ من المزوّد: {reply[:300]}")
+                self._emit("error", reply.strip()[:400])
+                return f"⛔ توقّف الوكيل — مشكلة في مزوّد النموذج:\n{reply.strip()[:300]}"
+
             action = extract_json(reply)
             if not action:
                 self._log(f"⚠️ رد غير منظّم:\n{reply[:500]}")
+                self._emit("thought", "(رد غير منظّم — أعيد المحاولة)")
                 messages.append({"role": "assistant", "content": reply})
                 messages.append({"role": "user", "content": "أخرج JSON صالحاً فقط كما في التعليمات."})
+                bad = getattr(self, "_bad", 0) + 1
+                self._bad = bad
+                if bad >= 3:
+                    self._emit("error", "النموذج يرجّع ردوداً غير صالحة متكررة.")
+                    return "⛔ توقّف الوكيل — النموذج لا يرجّع أوامر صالحة (جرّب عقلاً آخر من الإعدادات)."
                 continue
+            self._bad = 0
 
             messages.append({"role": "assistant", "content": json.dumps(action, ensure_ascii=False)})
 
             if action.get("thought"):
                 self._log(f"💭 {action['thought']}")
+                self._emit("thought", action["thought"])
 
             if action.get("done"):
                 final = action.get("final", "تم.")
                 self._log(f"\n✅ انتهى:\n{final}")
+                self._emit("done", final)
                 # 🔁 حلقة التعلّم: احفظ التجربة الناجحة كـ skill
                 if self.learn and self.kb:
                     self._save_skill(task, action.get("thought", ""), final)
@@ -148,8 +175,10 @@ class Agent:
                 continue
 
             self._log(f"🛠️ {tool}({json.dumps(args, ensure_ascii=False)[:200]})")
+            self._emit("tool", {"name": tool, "args": args})
             result = T.call_tool(tool, args)
             self._log(f"📤 النتيجة:\n{result[:1000]}")
+            self._emit("tool_result", {"name": tool, "result": result[:2000]})
             messages.append({"role": "user", "content": f"نتيجة {tool}:\n{result[:4000]}"})
 
         self._log("\n⏹️ بلغ الحد الأقصى للخطوات.")

@@ -25,3 +25,10 @@ projects/*
 .DS_Store
 .vscode/
 .idea/
+
+# 🔑 نسخ احتياطية للأسرار
+*.env.bak*
+config/.env.*
+# 🌐 بيانات الواجهة وقت التشغيل
+web/conversations.db
+web/__pycache__/
