@@ -1,0 +1,78 @@
+# ═══════════════════════════════════════════════════════════════
+#  🧠 العقل (BRAIN) — مركز التحكم الوحيد بالنموذج
+#  Ai_Alabbasi — وكيل عبّاس الذكي
+# ───────────────────────────────────────────────────────────────
+#  غيّر النموذج من هنا فقط. لا تلمس أي ملف آخر.
+#  بدّل active_brain لأي مفتاح تحت brains: لتغيير العقل.
+# ═══════════════════════════════════════════════════════════════
+
+# العقل الفعّال الآن (غيّر هذا السطر فقط للتبديل)
+active_brain: genspark_claude_opus
+
+brains:
+  # ── Genspark (الأقوى — عبر مفتاحك gsk) ─────────────────────
+  genspark_claude_opus:
+    provider: genspark
+    model: "claude-opus-4-8"
+    base_url: "https://www.genspark.ai/api/llm_proxy/v1"
+    api_key_env: GENSPARK_API_KEY
+    notes: "🥇 الأقوى للبناء الدقيق (Claude Opus)."
+
+  genspark_claude_sonnet:
+    provider: genspark
+    model: "claude-sonnet-4-6"
+    base_url: "https://www.genspark.ai/api/llm_proxy/v1"
+    api_key_env: GENSPARK_API_KEY
+    notes: "سريع وقوي، توازن ممتاز."
+
+  genspark_gpt5_codex:
+    provider: genspark
+    model: "gpt-5.3-codex"
+    base_url: "https://www.genspark.ai/api/llm_proxy/v1"
+    api_key_env: GENSPARK_API_KEY
+    notes: "GPT-5 مخصص للبرمجة (codex)."
+
+  genspark_gpt5:
+    provider: genspark
+    model: "gpt-5.5"
+    base_url: "https://www.genspark.ai/api/llm_proxy/v1"
+    api_key_env: GENSPARK_API_KEY
+    notes: "GPT-5.5 عام قوي."
+
+  genspark_deepseek:
+    provider: genspark
+    model: "deep-seek-v4-pro"
+    base_url: "https://www.genspark.ai/api/llm_proxy/v1"
+    api_key_env: GENSPARK_API_KEY
+    notes: "DeepSeek V4 Pro — قوي بالبرمجة."
+
+  genspark_haiku_fast:
+    provider: genspark
+    model: "claude-haiku-4-5"
+    base_url: "https://www.genspark.ai/api/llm_proxy/v1"
+    api_key_env: GENSPARK_API_KEY
+    notes: "سريع ورخيص للمهام البسيطة."
+
+  # ── OpenRouter (احتياطي — مجاني/مدفوع) ─────────────────────
+  openrouter_free_qwen:
+    provider: openrouter
+    model: "qwen/qwen3-coder:free"
+    base_url: "https://openrouter.ai/api/v1"
+    api_key_env: OPENROUTER_API_KEY
+    notes: "مجاني — قد يكون مزحوماً."
+
+  # ── نموذج محلي (Ollama) — جاهز للربط لاحقاً ────────────────
+  local_ollama:
+    provider: openai_compatible
+    model: "qwen2.5-coder:32b"
+    base_url: "http://localhost:11434/v1"
+    api_key_env: DUMMY_LOCAL_KEY
+    notes: "نموذج محلي مجاني تماماً. شغّل Ollama أولاً."
+
+# إعدادات عامة للعقل
+defaults:
+  temperature: 0.3
+  max_tokens: 4096
+  timeout_seconds: 120
+  retry_attempts: 3
+  retry_backoff_seconds: 5
