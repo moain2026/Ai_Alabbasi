@@ -108,6 +108,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);
 .step.thought .dot{background:var(--accent)}
 .step.tool .dot{background:var(--tool)}
 .step.result .dot{background:var(--ok)}
+.step.plan .dot{background:var(--warn,#e3b341)}
+.plan-list{margin:6px 0 0;padding-inline-start:20px;color:var(--text-2);line-height:1.7}
+.plan-list li{margin:2px 0}
 .step .tx{flex:1;color:var(--text-2);min-width:0}
 .step .tx b{color:var(--text);font-weight:600}
 .step .tx pre{background:#0a0a0c;border:1px solid var(--border);border-radius:8px;padding:9px 11px;
@@ -522,7 +525,12 @@ async function send(){
         const line=p.split('\n').find(l=>l.startsWith('data:'));
         if(!line)continue;
         const ev=JSON.parse(line.slice(5).trim());
-        if(ev.kind==='step'){
+        if(ev.kind==='plan'){
+          const items=(ev.data||[]).map((s,i)=>`<li>${esc(s)}</li>`).join('');
+          liveRows+=`<div class="step plan"><span class="dot"></span><div class="tx"><b>📋 الخطة</b><ol class="plan-list">${items}</ol></div></div>`;
+          liveBody.innerHTML=liveRows+`<div class="live-line"><span class="spin"></span> يبدأ التنفيذ…</div>`;
+          stepsPanel.classList.add('open');
+        } else if(ev.kind==='step'){
           liveBody.querySelector('.live-line')?.remove();
         } else if(ev.kind==='thought'){
           liveRows+=`<div class="step thought"><span class="dot"></span><div class="tx">${esc(ev.data)}</div></div>`;
