@@ -121,16 +121,56 @@ def append_file(path: str, content: str) -> str:
         return f"❌ فشل: {e}"
 
 
+def file_str_replace(path: str, old_str: str, new_str: str) -> str:
+    """
+    استبدال نصّي جراحي داخل ملف (نمط Manus str_replace).
+    يستبدل أول ظهور فقط لـ old_str بـ new_str — يفشل إن لم يوجد أو تكرّر.
+    مفيد لتعديل todo.md (Recitation) وللتعديلات الدقيقة دون إعادة كتابة الملف.
+    """
+    try:
+        p = _safe_path(path)
+        if not p.exists():
+            return f"❌ غير موجود: {path}"
+        text = p.read_text(encoding="utf-8")
+        count = text.count(old_str)
+        if count == 0:
+            return f"❌ لم يُعثر على النص المطلوب في: {path}"
+        if count > 1:
+            return f"❌ النص متكرر {count} مرات في {path} — وسّع old_str ليكون فريداً."
+        new_text = text.replace(old_str, new_str, 1)
+        p.write_text(new_text, encoding="utf-8")
+        return f"✅ استُبدل في: {path} ({len(old_str)}→{len(new_str)} حرف)"
+    except Exception as e:
+        return f"❌ فشل الاستبدال: {e}"
+
+
 # سجل الأدوات — الوكيل يقرأ منه
 TOOLS = {
     "run_shell":  {"fn": run_shell,  "args": ["command"], "desc": "نفّذ أمر terminal داخل projects/ (yarn/npm/git/python3 متاحة)"},
     "write_file": {"fn": write_file, "args": ["path", "content"], "desc": "اكتب/أنشئ ملفاً (يستبدل المحتوى)"},
     "append_file":{"fn": append_file,"args": ["path", "content"], "desc": "أضف لنهاية ملف"},
+    "file_str_replace":{"fn": file_str_replace,"args": ["path", "old_str", "new_str"], "desc": "استبدال نصّي جراحي داخل ملف (لتعديل todo.md والتعديلات الدقيقة)"},
     "read_file":  {"fn": read_file,  "args": ["path"], "desc": "اقرأ ملفاً"},
     "list_dir":   {"fn": list_dir,   "args": ["path"], "desc": "اعرض محتويات مجلد"},
     "make_dir":   {"fn": make_dir,   "args": ["path"], "desc": "أنشئ مجلداً"},
     "web_search": {"fn": web_search, "args": ["query"], "desc": "ابحث في الويب"},
+    "run_python": {"fn": None, "args": ["code"], "desc": "نفّذ كود Python داخل sandbox معزول (CodeAct) وأرجِع المخرجات"},
 }
+
+
+def _run_python(code: str) -> str:
+    """جسر CodeAct — يُستورد بكسل لتجنّب التبعية الدائرية."""
+    try:
+        import sys as _sys
+        from pathlib import Path as _P
+        _sys.path.insert(0, str(_P(__file__).resolve().parent.parent / "agent"))
+        from code_act_executor import CodeActExecutor
+        return CodeActExecutor().run(code)
+    except Exception as e:
+        return f"❌ تعذّر تشغيل CodeAct: {e}"
+
+
+TOOLS["run_python"]["fn"] = _run_python
 
 import urllib.parse  # noqa (مستخدم في web_search)
 
