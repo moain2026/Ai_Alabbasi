@@ -130,7 +130,19 @@ class Agent:
                 reply = self.brain.think(messages)
             except Exception as e:
                 self._log(f"❌ خطأ في العقل: {e}")
-                return f"فشل: {e}"
+                # 🔔 أصدر حدث خطأ واضحاً للواجهة بدل التوقف الصامت
+                msg = str(e)
+                if "المفتاح غير موجود" in msg or "api_key" in msg.lower() or "api key" in msg.lower():
+                    hint = (
+                        "⚠️ لا يوجد مفتاح API للنموذج.\n"
+                        f"التفاصيل: {msg}\n"
+                        "الحل: أنشئ ملف config/.env وأضف المفتاح المطلوب "
+                        "(انظر config/.env.example)، ثم أعد تشغيل الخادم."
+                    )
+                else:
+                    hint = f"❌ فشل العقل: {msg}"
+                self._emit("error", hint)
+                return hint
 
             # كشف أخطاء المزوّد (رصيد/مفتاح) — أوقف فوراً بدل التكرار
             low = reply.lower()
