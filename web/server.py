@@ -296,21 +296,30 @@ def list_skills():
     except Exception:
         pass
 
-    # 2) المهارات الخارجية (knowledge/external_skills/**/SKILL.md) — الطبقة 1 فقط
-    ext_dir = ROOT / "knowledge" / "external_skills"
-    if ext_dir.exists():
-        for sk in sorted(ext_dir.rglob("SKILL.md"))[:300]:
-            try:
-                head = sk.read_text(encoding="utf-8", errors="ignore")[:600]
-                name = sk.parent.name
-                desc = ""
-                for line in head.splitlines():
-                    if line.lower().startswith("description:"):
-                        desc = line.split(":", 1)[1].strip().strip('"')[:80]
-                        break
-                skills.append({"name": name, "desc": desc, "source": "external"})
-            except Exception:
-                continue
+    # 2) مهارات البذرة + الخارجية عبر الفهرس (Progressive Disclosure — الطبقة 1)
+    try:
+        sys.path.insert(0, str(ROOT / "knowledge"))
+        from skill_indexer import SkillIndex  # noqa
+        idx = SkillIndex(); idx.build()
+        for s in idx.tier1():
+            skills.append({"name": s["name"], "desc": s["description"][:80],
+                           "source": s["source"]})
+    except Exception:
+        # سقوط: قراءة مباشرة من المجلّدات
+        for sub in ("skills_seed", "external_skills"):
+            d = ROOT / "knowledge" / sub
+            if d.exists():
+                for sk in sorted(d.rglob("SKILL.md"))[:300]:
+                    try:
+                        head = sk.read_text(encoding="utf-8", errors="ignore")[:600]
+                        desc = ""
+                        for line in head.splitlines():
+                            if line.lower().startswith("description:"):
+                                desc = line.split(":", 1)[1].strip().strip('"')[:80]
+                                break
+                        skills.append({"name": sk.parent.name, "desc": desc, "source": sub})
+                    except Exception:
+                        continue
 
     # 3) مهارات افتراضية إن لم يوجد شيء (placeholders للعرض)
     if not skills:

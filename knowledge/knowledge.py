@@ -27,6 +27,14 @@ try:
 except Exception:
     _HYBRID_OK = False
 
+# ── فهرسة/اختيار المهارات (Phase 3) — سقوط آمن إن غاب ──
+try:
+    from skill_indexer import SkillIndex      # noqa
+    from skill_selector import SkillSelector  # noqa
+    _SKILLS_OK = True
+except Exception:
+    _SKILLS_OK = False
+
 
 def _fts_query(text: str) -> str:
     """يحوّل نص المستخدم لاستعلام FTS5 آمن (OR بين الكلمات)."""
@@ -44,6 +52,8 @@ class Knowledge:
         # مُضمِّن مشترك للبحث الهجين (يُهيّأ كسولاً)
         self.use_hybrid = hybrid and _HYBRID_OK
         self._embedder = None
+        # فهرس/مُختار المهارات (يُهيّأ كسولاً)
+        self._skill_sel = None
 
     def _emb(self):
         """يُهيّئ المُضمِّن عند أول حاجة (كسول)."""
@@ -181,9 +191,25 @@ class Knowledge:
             backend = f"hybrid ({emb.backend})" if emb else "fts5-only"
         return {"docs": d, "skills": s, "topics": topics, "search": backend}
 
+    def _skill_selector(self):
+        """يُهيّئ مُختار المهارات عند أول حاجة (كسول)."""
+        if self._skill_sel is None and _SKILLS_OK:
+            try:
+                idx = SkillIndex(); idx.build()
+                self._skill_sel = SkillSelector(idx, embedder=self._emb())
+            except Exception:
+                self._skill_sel = False   # علامة فشل لتجنّب إعادة المحاولة
+        return self._skill_sel or None
+
     def context_for(self, task: str, topic: str = None) -> str:
-        """يبني نص سياق (RAG + skills) لحقنه في عقل الوكيل قبل مهمة."""
+        """يبني نص سياق (مهارات + RAG + خبرات) لحقنه في عقل الوكيل قبل مهمة."""
         parts = []
+        # 🎯 مهارات منتقاة (Progressive Disclosure — الطبقة 2)
+        sel = self._skill_selector()
+        if sel:
+            skill_ctx = sel.context_for(task, top=2)
+            if skill_ctx:
+                parts.append(skill_ctx)
         skills = self.search_skills(task)
         if skills:
             parts.append("### خبرات سابقة ذات صلة (من تجاربك):")
