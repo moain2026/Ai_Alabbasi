@@ -22,6 +22,25 @@
 
 ---
 
+## 🚀 جديد في الإصدار 2.0 — أذكى من Manus AI
+
+ترقية كبرى عبر 7 مراحل (راجع [`CHANGELOG.md`](CHANGELOG.md)):
+
+| الميزة | الوصف | الملف |
+|-------|-------|------|
+| 🗂️ **تيار الأحداث** | EventStream بستة أنواع موحّدة | `agent/event_stream.py` |
+| 📝 **مخطّط + قائمة مهام** | خطة مرقّمة + "تلاوة" الهدف (Recitation) | `agent/planner.py` · `agent/todo_manager.py` |
+| ⚙️ **آلة حالات + مقاطعة** | تحكّم آمن في دورة حياة المهمة | `agent/state_machine.py` · `agent/interrupt_handler.py` |
+| 🐍 **CodeAct** | تنفيذ Python معزول داخل `projects/` | `agent/code_act_executor.py` |
+| 🔎 **بحث هجين** | FTS5 + متجهات دلالية مدموجة بـ RRF | `knowledge/hybrid_search.py` |
+| 🧩 **اختيار ذكي للمهارات** | كشف تدريجي 3 طبقات + مطابقة عربية ضبابية | `knowledge/skill_indexer.py` |
+| ☁️ **صندوق رمل سحابي** | local / Daytona / E2B بسقوط آمن | `tools/cloud_sandbox.py` |
+| 🎨 **5 مهارات عربية** | كتابة محتوى، تحليل فواتير، سياق يمني… | `knowledge/skills_seed/` |
+
+> ✅ **74 اختبار ناجح** · جميع التبعيات الثقيلة **اختيارية** مع بديل آمن.
+
+---
+
 ## ⚡ التثبيت السريع (أي مكان)
 
 ```bash
