@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, "upgrade/**" ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: اختبارات + فحص الصياغة
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - name: استنساخ الكود
+        uses: actions/checkout@v4
+
+      - name: تهيئة Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: تثبيت التبعيات
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: فحص صياغة كل ملفات Python
+        run: |
+          python -m compileall -q agent knowledge tools web brain
+
+      - name: تشغيل الاختبارات
+        env:
+          # مفتاح وهمي — الاختبارات لا تتصل بالشبكة
+          GENSPARK_API_KEY: "dummy-key-for-ci"
+        run: |
+          python -m pytest tests/ -q
